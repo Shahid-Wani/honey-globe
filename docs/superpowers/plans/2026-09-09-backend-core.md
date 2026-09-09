@@ -1751,7 +1751,6 @@ import asyncio
 import sys
 from pathlib import Path
 
-import httpx
 from fastapi.testclient import TestClient
 
 from honeyglobe.api import create_app
