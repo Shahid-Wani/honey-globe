@@ -197,7 +197,7 @@ git commit -m "docs: record dataset provenance and license"
 {"eventid": "cowrie.session.connect", "timestamp": "2023-06-12T14:00:01.000Z", "src_ip": "203.0.113.5", "src_port": 51234, "session": "aa11", "protocol": ["ssh"] }
 {"eventid": "cowrie.login.failed", "timestamp": "2023-06-12T14:00:03.000Z", "src_ip": "203.0.113.5", "src_port": 51234, "session": "aa11", "username": "root", "password": "123456"}
 {"eventid": "cowrie.login.failed", "timestamp": "2023-06-12T14:00:04.000Z", "src_ip": "203.0.113.5", "src_port": 51234, "session": "aa11", "username": "admin", "password": "admin"}
-{"eventid": "cowrie.login.succeeded", "timestamp": "2023-06-12T14:00:05.000Z", "src_ip": "203.0.113.5", "src_port": 51234, "session": "aa11", "username": "root", "password": "123456"}
+{"eventid": "cowrie.login.success", "timestamp": "2023-06-12T14:00:05.000Z", "src_ip": "203.0.113.5", "src_port": 51234, "session": "aa11", "username": "root", "password": "123456"}
 {"eventid": "cowrie.command.input", "timestamp": "2023-06-12T14:00:10.000Z", "src_ip": "203.0.113.5", "src_port": 51234, "session": "aa11", "input": "cat /etc/passwd"}
 {"eventid": "cowrie.session.file_download", "timestamp": "2023-06-12T14:00:20.000Z", "src_ip": "203.0.113.5", "src_port": 51234, "session": "aa11", "url": "http://example.invalid/x.sh"}
 {"eventid": "cowrie.session.closed", "timestamp": "2023-06-12T14:00:25.000Z", "src_ip": "203.0.113.5", "src_port": 51234, "session": "aa11"}
@@ -289,7 +289,7 @@ from honeyglobe.events import Event
 COWRIE_MAP = {
     "cowrie.session.connect": "session_open",
     "cowrie.login.failed": "login_attempt",
-    "cowrie.login.succeeded": "login_success",
+    "cowrie.login.success": "login_success",
     "cowrie.command.input": "command",
     "cowrie.session.file_download": "download_attempt",
     "cowrie.session.closed": "session_close",
