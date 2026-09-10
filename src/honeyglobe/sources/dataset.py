@@ -23,34 +23,52 @@ class DatasetSource:
         self.path = Path(path)
 
     def events(self) -> Iterator[Event]:
+        session_protocols: dict[str, str] = {}
         with self.path.open(encoding="utf-8", errors="replace") as fh:
             for line in fh:
                 line = line.strip()
                 if not line:
                     continue
-                event = self._parse_line(line)
+                event = self._parse_line(line, session_protocols)
                 if event is not None:
                     yield event
 
-    def _parse_line(self, line: str) -> Event | None:
+    def _parse_line(self, line: str, session_protocols: dict[str, str]) -> Event | None:
         try:
             raw = json.loads(line)
         except json.JSONDecodeError:
             return None
-        mapped = COWRIE_MAP.get(raw.get("eventid", ""))
+        if not isinstance(raw, dict):
+            return None
+        eventid = raw.get("eventid")
+        if not isinstance(eventid, str):
+            return None
+        mapped = COWRIE_MAP.get(eventid)
         if mapped is None:
             return None
         ts = self._valid_ts(raw.get("timestamp"))
         src_ip = raw.get("src_ip")
         if ts is None or not src_ip:
             return None
+        session_id = raw.get("session")
+        if mapped == "session_open":
+            protocol = raw.get("protocol")
+            if isinstance(protocol, str) and protocol:
+                if isinstance(session_id, str) and session_id:
+                    session_protocols[session_id] = protocol
+            else:
+                protocol = "ssh"
+        elif isinstance(session_id, str) and session_id:
+            protocol = session_protocols.get(session_id, "ssh")
+        else:
+            protocol = "ssh"
         return Event(
             event_type=mapped,
-            ts=ts or "",
-            src_ip=src_ip or "",
+            ts=ts,
+            src_ip=src_ip,
             src_port=raw.get("src_port"),
-            protocol="ssh",
-            session_id=raw.get("session"),
+            protocol=protocol,
+            session_id=session_id,
             username=raw.get("username"),
             password=raw.get("password"),
             command=raw.get("input"),

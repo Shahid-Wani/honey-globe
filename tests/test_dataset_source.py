@@ -14,6 +14,7 @@ def test_yields_events_in_schema_order():
     assert [e.event_type for e in events] == [
         "session_open", "login_attempt", "login_attempt", "login_success",
         "command", "download_attempt", "session_close",
+        "session_open", "login_attempt", "login_attempt",
     ]
     first = events[0]
     assert first.dataset_id == "fixture"
@@ -32,11 +33,19 @@ def test_maps_cowrie_fields():
     assert login.username == "root" and login.password == "123456"
 
 
-def test_protocol_defaults_to_ssh():
-    assert all(e.protocol == "ssh" for e in _events())
+def test_protocol_follows_session_connect():
+    events = _events()
+    by_session: dict[str, list[str]] = {}
+    for e in events:
+        by_session.setdefault(e.session_id or "", []).append(e.protocol)
+    assert set(by_session["aa11"]) == {"ssh"}
+    assert set(by_session["bb22"]) == {"telnet"}
+    # zz99 never appears in a connect -> falls back to the ssh default
+    assert by_session["zz99"] == ["ssh"]
 
 
 def test_malformed_lines_are_skipped_never_crash():
     events = _events()
-    # 9 lines, 2 malformed (bad date skipped, garbage line skipped) -> 7 events
-    assert len(events) == 7
+    # 15 lines, 5 skipped (bad date, garbage JSON, non-object JSON,
+    # non-string eventid, missing src_ip) -> 10 events
+    assert len(events) == 10
