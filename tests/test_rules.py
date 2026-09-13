@@ -53,6 +53,11 @@ def test_first_country_ignores_missing_country():
     assert FIRST_COUNTRY.evaluate(events) == []
 
 
+def test_first_country_ignores_empty_string_country():
+    events = [_ev("2023-06-12T14:00:00Z", ip="1.1.1.1", country="")]
+    assert FIRST_COUNTRY.evaluate(events) == []
+
+
 def test_persistent_ip_fires_on_third_day():
     events = [
         _ev("2023-06-10T01:00:00Z", ip="9.9.9.9"),

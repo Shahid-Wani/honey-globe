@@ -56,7 +56,7 @@ def _first_country(events: list[dict]) -> list[dict]:
     alerts = []
     for e in events:
         country = e.get("country")
-        if country is None or country in seen:
+        if not country or country in seen:
             continue
         seen.add(country)
         alerts.append(_alert(
