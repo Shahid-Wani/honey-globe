@@ -68,3 +68,13 @@ def test_clear_alerts_scoped_to_dataset(storage):
     storage.clear_alerts("ds1")
     assert storage.get_alerts("ds1") == []
     assert len(storage.get_alerts("ds2")) == 1
+
+
+def test_alerts_all_spans_datasets(storage):
+    storage.insert_alerts([
+        {"rule_id": "R", "ts": "2023-06-12T14:00:03.000Z", "src_ip": "1.1.1.1",
+         "details_json": "{}", "dataset_id": "dsA"},
+        {"rule_id": "R", "ts": "2023-06-12T15:00:03.000Z", "src_ip": "1.1.1.2",
+         "details_json": "{}", "dataset_id": "dsB"},
+    ])
+    assert [a["dataset_id"] for a in storage.get_alerts_all()] == ["dsA", "dsB"]
