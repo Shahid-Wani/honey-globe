@@ -80,13 +80,16 @@ def create_app(db_path: Path) -> FastAPI:
                 action = msg.get("action")
                 if action == "play":
                     if clock is None or msg.get("reset"):
+                        if pump is not None and not pump.done():
+                            pump.cancel()
+                            with contextlib.suppress(asyncio.CancelledError):
+                                await pump
                         clock = ReplayClock(
                             storage.all_events_enriched(), speed=msg.get("speed", 1)
                         )
+                        pump = asyncio.create_task(run_pump(clock))
                     else:
                         clock.play(speed=msg.get("speed"))
-                    if pump is None or pump.done():
-                        pump = asyncio.create_task(run_pump(clock))
                 elif action == "pause" and clock is not None:
                     clock.pause()
                 elif action == "seek" and clock is not None:
