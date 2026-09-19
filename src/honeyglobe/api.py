@@ -1,8 +1,11 @@
+import asyncio
+import contextlib
 from collections import Counter
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
 
+from honeyglobe.replay import ReplayClock
 from honeyglobe.storage import Storage
 
 
@@ -57,5 +60,43 @@ def create_app(db_path: Path) -> FastAPI:
     @app.get("/api/alerts")
     def alerts() -> list[dict]:
         return storage.get_alerts_all()
+
+    @app.websocket("/ws")
+    async def ws_replay(websocket: WebSocket) -> None:
+        await websocket.accept()
+        clock: ReplayClock | None = None
+        pump: asyncio.Task | None = None
+
+        async def run_pump(c: ReplayClock) -> None:
+            try:
+                async for batch in c.batches():
+                    await websocket.send_json(batch)
+            except (WebSocketDisconnect, RuntimeError):
+                pass
+
+        try:
+            while True:
+                msg = await websocket.receive_json()
+                action = msg.get("action")
+                if action == "play":
+                    if clock is None or msg.get("reset"):
+                        clock = ReplayClock(
+                            storage.all_events_enriched(), speed=msg.get("speed", 1)
+                        )
+                    else:
+                        clock.play(speed=msg.get("speed"))
+                    if pump is None or pump.done():
+                        pump = asyncio.create_task(run_pump(clock))
+                elif action == "pause" and clock is not None:
+                    clock.pause()
+                elif action == "seek" and clock is not None:
+                    clock.seek(msg.get("ts", "1970-01-01T00:00:00Z"))
+        except WebSocketDisconnect:
+            pass
+        finally:
+            if pump is not None and not pump.done():
+                pump.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await pump
 
     return app
