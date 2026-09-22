@@ -103,3 +103,9 @@ def create_app(db_path: Path) -> FastAPI:
                     await pump
 
     return app
+
+
+def create_dev_app() -> FastAPI:
+    """Factory for `uvicorn honeyglobe.api:create_dev_app --factory`."""
+    from pathlib import Path as _P
+    return create_app(_P("data/honeyglobe.db"))

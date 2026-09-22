@@ -86,6 +86,38 @@ def test_popular_cred_fires_on_share():
     assert '"username": "root"' in alerts[0]["details_json"]
 
 
+def test_cred_burst_second_burst_after_gap():
+    # 10 attempts in one 10-min window (alert 1), then 10 MORE in a later window
+    # after a gap — non-overlapping advancement (i = j) yields exactly 2 alerts.
+    events = [dict(_ev("2023-06-12T14:00:00Z", ip="9.9.9.9", user=f"a{i}"),
+                   ts=f"2023-06-12T14:{i:02d}:00Z") for i in range(10)]
+    events += [dict(_ev("2023-06-12T15:30:00Z", ip="9.9.9.9", user=f"b{i}"),
+                    ts=f"2023-06-12T15:{30 + i}:00Z") for i in range(10)]
+    alerts = CRED_BURST.evaluate(events)
+    assert len(alerts) == 2
+    assert alerts[0]["ts"] == "2023-06-12T14:00:00Z"
+    assert '"attempts": 10' in alerts[0]["details_json"]
+    assert alerts[1]["ts"] == "2023-06-12T15:30:00Z"
+    assert '"attempts": 10' in alerts[1]["details_json"]
+
+
+def test_popular_cred_exact_five_percent_boundary():
+    # 5 "root" attempts out of 100 total -> share exactly 0.05 -> fires (>= semantics
+    # on the unrounded share; a <= comparison would skip it).
+    events = [dict(_ev("2023-06-12T14:00:00Z", ip=f"10.0.0.{i}", user="root", pw="r"))
+              for i in range(5)]
+    events += [dict(_ev("2023-06-12T14:00:00Z", ip=f"10.0.1.{i}", user=f"u{i}", pw="x"))
+               for i in range(95)]
+    alerts = POPULAR_CRED.evaluate(events)
+    assert [a["rule_id"] for a in alerts] == ["POPULAR_CRED"]
+    assert '"share": 0.05' in alerts[0]["details_json"]
+
+
+def test_download_attempt_skips_empty_url():
+    events = [_ev("2023-06-12T14:00:00Z", et="download_attempt", ip="5.5.5.5", url="")]
+    assert DOWNLOAD_ATTEMPT.evaluate(events) == []
+
+
 def test_download_attempt_alerts_each_download():
     events = [
         _ev("2023-06-12T14:00:00Z", et="download_attempt", ip="5.5.5.5",
