@@ -38,3 +38,59 @@ def test_run_all_deterministic():
         },
     ]
     assert run_all(events) == run_all(events)
+
+
+def test_run_all_does_not_mutate_input():
+    import copy
+
+    events = [
+        {
+            "event_type": "download_attempt", "ts": "2023-06-12T14:00:00Z", "src_ip": "5.5.5.5",
+            "src_port": 1, "protocol": "ssh", "session_id": "s", "username": None, "password": None,
+            "command": None, "url": "http://x.invalid/a", "dataset_id": "ds1",
+        },
+        {
+            "event_type": "login_attempt", "ts": "2023-06-12T14:09:00Z", "src_ip": "1.2.3.4",
+            "src_port": 1, "protocol": "ssh", "session_id": "s", "username": "root", "password": "x",
+            "command": None, "url": None, "dataset_id": "ds1",
+        },
+    ]
+    events += [
+        {
+            "event_type": "login_attempt", "ts": f"2023-06-12T14:0{i}:00Z", "src_ip": "1.2.3.4",
+            "src_port": 1, "protocol": "ssh", "session_id": "s", "username": "root", "password": "x",
+            "command": None, "url": None, "dataset_id": "ds1",
+        }
+        for i in range(9)
+    ]
+    original = copy.deepcopy(events)
+    run_all(events)
+    assert events == original
+
+
+def test_run_all_final_order_is_ts_sorted_when_rule_order_opposes_ts():
+    # CRED_BURST is evaluated first (RULES order) but its alert ts (14:30) is LATER
+    # than the DOWNLOAD_ATTEMPT at 14:00 — the engine's final ts sort must win.
+    events = [
+        {
+            "event_type": "download_attempt", "ts": "2023-06-12T14:00:00Z", "src_ip": "5.5.5.5",
+            "src_port": 1, "protocol": "ssh", "session_id": "s", "username": None, "password": None,
+            "command": None, "url": "http://x.invalid/a", "dataset_id": "ds1",
+        },
+    ]
+    events += [
+        {
+            "event_type": "login_attempt", "ts": f"2023-06-12T14:3{i}:00Z", "src_ip": "1.2.3.4",
+            "src_port": 1, "protocol": "ssh", "session_id": "s", "username": "root", "password": "x",
+            "command": None, "url": None, "dataset_id": "ds1",
+        }
+        for i in range(10)
+    ]
+    alerts = run_all(events)
+    ids = [a["rule_id"] for a in alerts]
+    assert ids.index("DOWNLOAD_ATTEMPT") < ids.index("CRED_BURST")
+    assert alerts == sorted(alerts, key=lambda a: a["ts"])
+
+
+def test_run_all_on_empty_list():
+    assert run_all([]) == []

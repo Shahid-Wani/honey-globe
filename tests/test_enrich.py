@@ -38,3 +38,11 @@ def test_enrichment_cached_in_storage(tmp_path: Path):
     result = enricher.enrich_ips(["203.0.113.5"])
     assert "203.0.113.5" not in calls  # served from cache, no fresh lookup
     assert result["203.0.113.5"]["abuse_confidence"] == 88
+
+
+def test_miss_path_persists_fresh_lookup(tmp_path: Path):
+    storage = Storage(tmp_path / "t.db")
+    enricher = Enricher(storage, geo_db=FakeGeoDB(), abuse_client=None)
+    result = enricher.enrich_ips(["203.0.113.5"])  # cache miss -> fresh lookup
+    assert result["203.0.113.5"]["country"] == "AU"
+    assert storage.get_enrichment("203.0.113.5")["country"] == "AU"  # persisted for next call
