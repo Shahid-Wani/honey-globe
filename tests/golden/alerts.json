@@ -1,0 +1,23 @@
+[
+  {
+    "rule_id": "POPULAR_CRED",
+    "ts": "2023-06-12T14:00:03.000Z",
+    "src_ip": "203.0.113.5",
+    "details_json": "{\"count\": 2, \"share\": 0.5, \"username\": \"root\"}",
+    "dataset_id": "fixture"
+  },
+  {
+    "rule_id": "POPULAR_CRED",
+    "ts": "2023-06-12T14:00:04.000Z",
+    "src_ip": "203.0.113.5",
+    "details_json": "{\"count\": 2, \"share\": 0.5, \"username\": \"admin\"}",
+    "dataset_id": "fixture"
+  },
+  {
+    "rule_id": "DOWNLOAD_ATTEMPT",
+    "ts": "2023-06-12T14:00:20.000Z",
+    "src_ip": "203.0.113.5",
+    "details_json": "{\"url\": \"http://example.invalid/x.sh\"}",
+    "dataset_id": "fixture"
+  }
+]
