@@ -17,6 +17,7 @@ except Exception:  # noqa: BLE001 — geo enrichment is optional, degrade to Non
 def run(source: SourceAdapter, storage: Storage, enricher: Enricher, dataset_id: str) -> dict:
     events = list(source.events())
     inserted = storage.insert_events(events)
+    skipped = getattr(source, "skipped", 0)
     ip_set = sorted({e.src_ip for e in events if e.src_ip})
     enricher.enrich_ips(ip_set)
     enriched = {ip: (storage.get_enrichment(ip) or {}) for ip in ip_set}
@@ -26,7 +27,7 @@ def run(source: SourceAdapter, storage: Storage, enricher: Enricher, dataset_id:
     storage.clear_alerts(dataset_id)  # re-ingest must not duplicate alerts
     alerts = run_all(stored)
     storage.insert_alerts(alerts)
-    return {"events": inserted, "alerts": len(alerts), "ips": len(ip_set)}
+    return {"events": inserted, "skipped": skipped, "alerts": len(alerts), "ips": len(ip_set)}
 
 
 def main() -> None:
