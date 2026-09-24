@@ -13,3 +13,8 @@ uvicorn honeyglobe.api:create_dev_app --factory --reload
 ```
 
 `create_dev_app` is a no-arg factory in `src/honeyglobe/api.py` that reads `data/honeyglobe.db`.
+
+## Verify the whole pipeline
+
+    python scripts/smoke.py <dataset_id> data/datasets/<file>
+    # → SMOKE PASS
