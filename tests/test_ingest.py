@@ -20,6 +20,7 @@ def test_ingest_full_pipeline(tmp_path: Path):
     summary = run(source, storage, enricher, dataset_id="fixture")
     # 10 valid events in fixture (15 lines, 5 malformed skipped — per test_dataset_source)
     assert summary["events"] == 10
+    assert summary["skipped"] == 5
     assert summary["ips"] == 3
     assert summary["alerts"] >= 1  # DOWNLOAD_ATTEMPT fires on fixture download
     alerts = storage.get_alerts("fixture")

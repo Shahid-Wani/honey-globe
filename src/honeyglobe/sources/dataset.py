@@ -21,6 +21,7 @@ class DatasetSource:
     def __init__(self, dataset_id: str, path: Path) -> None:
         self.dataset_id = dataset_id
         self.path = Path(path)
+        self.skipped = 0
 
     def events(self) -> Iterator[Event]:
         session_protocols: dict[str, str] = {}
@@ -32,6 +33,8 @@ class DatasetSource:
                 event = self._parse_line(line, session_protocols)
                 if event is not None:
                     yield event
+                else:
+                    self.skipped += 1
 
     def _parse_line(self, line: str, session_protocols: dict[str, str]) -> Event | None:
         try:

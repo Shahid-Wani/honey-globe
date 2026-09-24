@@ -58,6 +58,10 @@ def test_sessions(client):
     assert [e["event_type"] for e in body["events"]] == ["session_open", "login_attempt"]
 
 
+def test_unknown_session_404(client):
+    assert client.get("/api/sessions/does-not-exist").status_code == 404
+
+
 def test_alerts(client):
     alerts = client.get("/api/alerts").json()
     assert alerts[0]["rule_id"] == "CRED_BURST"
